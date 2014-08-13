@@ -24,6 +24,7 @@ After acquiring the target, it turns and goes to the target.*/
 /*Prototypes*/
 void move_to_target_pos(const std_msgs::Float32MultiArray::ConstPtr& msg);
 void get_current_pos(const std_msgs::Float32MultiArray::ConstPtr& msg);
+void get_encoders_pulses(const drrobot_I90_player::MotorInfoArray motorInfoArray)
 
 /*Variables*/
 
@@ -46,11 +47,12 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "i90_movement");//Create node called "i90_movement"
 	ros::NodeHandle n;//Create nodehandler to modify features of the node
-	ros::Publisher pub = n.advertise<geometry_msgs::Twist>("drrobot_cmd_vel", 1);
+	ros::Publisher pub_vel = n.advertise<geometry_msgs::Twist>("drrobot_cmd_vel", 1);
 	ros::Subscriber sub = n.subscribe("i90_target_pos", 1, move_to_target_pos);
 	ros::Subscriber sub = n.subscribe("i90_current_pos", 1, get_current_pos);
-	ros::Publisher pub = n.advertise<std_msgs::Empty>("i90_translation_done",1);
-	ros::Publisher pub = n.advertise<std_msgs::Empty>("i90_rotation_done",1);
+	ros::Subscriber sub = n.subscribe("drrobot_motor", 1, get_encoders_pulses);
+	ros::Publisher pub_translation = n.advertise<std_msgs::bol>("i90_translation_done",1);
+	ros::Publisher pub_rotation = n.advertise<std_msgs::bol>("i90_rotation_done",1);
 
 	ros::Duration d = ros::Duration(2,0);
 	ros::Rate loop_rate(2);
@@ -84,7 +86,7 @@ void move_target_pos(const std_msgs::Float32MultiArray::ConstPtr& targetValues){
 		turn right
 	}
 	//Publish command to i90_position
-	pub.publish(1);	
+	pub_rotation.publish(1);	
 
 	/*Move i90*/	
 	target_pos_x = targetValues.data[0]; //Get target position in 'x' axis from i90_sensor_board
@@ -101,7 +103,7 @@ void move_target_pos(const std_msgs::Float32MultiArray::ConstPtr& targetValues){
 		go forward;
 	} 
 	//Publish command to i90_position
-	pub.publish(1);
+	pub_translation.publish(1);
 
 	ROS_INFO("Target values: [%f]/t[%f]", targetValues.data[0], targetValues.data[1]);
 }
@@ -112,3 +114,11 @@ void get_current_pos(const std_msgs::Float32MultiArray::ConstPtr& targetValues){
 
 	ROS_INFO("Target values: [%f]/t[%f]", targetValues.data[0], targetValues.data[1]);
 }
+
+void get_encoders_pulses(const drrobot_I90_player::MotorInfoArray motorInfoArray)
+{
+	current_pulses_1 =	motorInfoArray.motorInfos[0].encoder_pos;
+	current_pulses_2 =	motorInfoArray.motorInfos[1].encoder_pos);
+	ROS_INFO("I heard: [%u]/t[%u]", motorInfoArray.motorInfos[0].encoder_pos, motorInfoArray.motorInfos[1].encoder_pos);
+}
+
